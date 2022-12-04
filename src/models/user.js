@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../utils/sequelize-client');
-const { Todo } = require('./todo');
 
 const User = sequelize.define(
   'user',
@@ -71,7 +70,5 @@ const User = sequelize.define(
     tableName: 'user',
   }
 );
-
-User.hasMany(Todo, { as: 'todo', foreignKey: 'todo_id' });
 
 module.exports = { User };
