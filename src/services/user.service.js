@@ -4,7 +4,6 @@ const GenericError = require('../utils/generic-error');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment-timezone');
 const cryptoService = require('./crypto.service');
-const jwt = require('./../utils/jwt');
 const paginationOptionGenerator = require('../utils/pagination-option-generator');
 /**
  * Get all users
@@ -45,7 +44,8 @@ async function getAll({ pagination }) {
  * @param {string} password
  * @returns {Promise<{status: boolean, token: (*)}>}
  */
-async function createUser({ name, surname, email, password }) {
+async function createUser({ body }) {
+  const { name, surname, email, password } = body || {};
   const foundUser = await User.count({
     where: {
       email: email,
@@ -70,9 +70,8 @@ async function createUser({ name, surname, email, password }) {
   if (createUser) {
     return {
       status: true,
-      token: jwt.createJwtToken({
-        user_id: JSON.parse(JSON.stringify(createUser)).user_id,
-      }),
+      user_id: createUser.user_id,
+      email: createUser.email,
     };
   }
 }
@@ -82,7 +81,8 @@ async function createUser({ name, surname, email, password }) {
  * @param req
  * @returns {Promise<any>}
  */
-async function getUser({ user_id, email }) {
+async function getUser({ body }) {
+  const { user_id, email } = body || {};
   const filter = {
     where: {
       status: true,
@@ -94,36 +94,17 @@ async function getUser({ user_id, email }) {
   } else if (!_.isEmpty(email)) {
     filter.where.email = email;
   }
-  return User.findOne(filter);
-}
 
-/**
- * Create user token.
- * @param {string} user_id
- * @param {string} email
- * @returns {Promise<*>}
- */
-async function createUserToken({ user_id, email }) {
-  const filter = {
+  const user = await User.findOne(filter);
+
+  return {
     status: true,
-    deleted_at: null,
+    data: user,
   };
-
-  if (!_.isEmpty(user_id)) {
-    filter.user_id = user_id;
-  } else if (!_.isEmpty(email)) {
-    filter.email = email;
-  }
-
-  return User.findOne(filter);
 }
-
-async function revokeRequestToken() {}
 
 module.exports = {
   createUser,
   getUser,
-  createUserToken,
   getAll,
-  revokeRequestToken,
 };
